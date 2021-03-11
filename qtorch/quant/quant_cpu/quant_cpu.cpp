@@ -307,8 +307,7 @@ Tensor float_quantize(Tensor a, int man_bits, int exp_bits, Mode rounding){
 
   // Log overflows if necessary
   char* QPYTORCH_LOG = getenv("QPYTORCH_LOG");
-  char* all = "ALL";
-  if (strcmp(QPYTORCH_LOG,all) == 0){
+  if (strcmp(QPYTORCH_LOG,"ALL") == 0){
     char* SLURM_JOB_ID = getenv("SLURM_JOB_ID");
     char file_name[80] = "QPYTORCH_LOG_";
     if (SLURM_JOB_ID!=NULL)
