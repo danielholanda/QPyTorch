@@ -270,9 +270,13 @@ Tensor float_quantize(Tensor a, int man_bits, int exp_bits, Mode rounding){
   auto o_array = o.data_ptr<float>();
   int size = a.numel();
 
+  unsigned int overflows=0;
+  unsigned int underflows=0;
+  unsigned int total=size;
+
   for (int64_t i = 0; i < size; i++)
   {
-    unsigned int target,quantize_bits;
+    unsigned int target,quantize_bits,quantize_bits_tmp;
     FLOAT_TO_BITS(a_array[i], target);
     float quantized;
 
@@ -280,6 +284,7 @@ Tensor float_quantize(Tensor a, int man_bits, int exp_bits, Mode rounding){
     int min_exp = -((1 << (exp_bits - 1)) - 2);
     bool subnormal = (target_exp < min_exp);
     if (subnormal){
+      underflows=underflows+1;
       float shift_float,val;
       int shift_bits = ((127+min_exp)<<23) | (target >> 31 <<31);
       BITS_TO_FLOAT(shift_bits, shift_float);
@@ -290,12 +295,31 @@ Tensor float_quantize(Tensor a, int man_bits, int exp_bits, Mode rounding){
       quantized=quantized-shift_float;
     }
     else{
-      quantize_bits = round_bitwise(target, man_bits, rounding);
-      quantize_bits = clip_exponent(exp_bits, man_bits, target, quantize_bits);
+      quantize_bits_tmp = round_bitwise(target, man_bits, rounding);
+      quantize_bits     = clip_exponent(exp_bits, man_bits, target, quantize_bits_tmp);
+      if (quantize_bits!=quantize_bits_tmp){
+        overflows=overflows+1;
+      }
       BITS_TO_FLOAT(quantize_bits, quantized);
     }
     o_array[i] = quantized;
   }
+
+  // Log overflows if necessary
+  char* QPYTORCH_LOG = getenv("QPYTORCH_LOG");
+  char* all = "ALL";
+  if (strcmp(QPYTORCH_LOG,all) == 0){
+    char* SLURM_JOB_ID = getenv("SLURM_JOB_ID");
+    char file_name[80] = "QPYTORCH_LOG_";
+    if (SLURM_JOB_ID!=NULL)
+      strcat(file_name, SLURM_JOB_ID);
+    strcat(file_name, ".txt");
+    FILE *f;
+    f = fopen(file_name, "a");
+    fprintf(f, "%d %d %d\n",total,overflows,underflows);
+    fclose(f);
+  }
+
   return o;
 }
 
