@@ -57,7 +57,7 @@ Tensor float_quantize_nearest(Tensor a, int man_bits, int exp_bits)
 
   enhanced_tensor E = float_quantize_nearest_cuda(a, man_bits, exp_bits);
 
-  return E.T
+  return E.T;
 }
 
 Tensor fixed_point_quantize_stochastic(Tensor a, int wl, int fl, bool use_clamp, bool symmetric)
@@ -89,7 +89,7 @@ Tensor float_quantize_stochastic(Tensor a, int man_bits, int exp_bits)
 {
   CHECK_INPUT(a);
   enhanced_tensor E = float_quantize_stochastic_cuda(a, man_bits, exp_bits);
-  return E.T
+  return E.T;
 }
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m)

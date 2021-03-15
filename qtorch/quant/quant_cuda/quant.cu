@@ -111,11 +111,11 @@ enhanced_tensor float_quantize_stochastic_cuda(Tensor a, int man_bits, int exp_b
                                                     o.data_ptr<float>(),
                                                     size,
                                                     man_bits,
-                                                    exp_bits,
-                                                    overflows.data_ptr<int>(),
-                                                    underflows.data_ptr<int>());
+                                                    exp_bits);
+  cudaMemcpyFromSymbol(&overflows, "ovf", sizeof(overflows), 0, cudaMemcpyDeviceToHost);
+  cudaMemcpyFromSymbol(&underflows, "udf", sizeof(underflows), 0, cudaMemcpyDeviceToHost);
   enhanced_tensor E;
-  E.T=0;
+  E.T=o;
   E.overflows=overflows;
   E.underflows=underflows;
   return E;
@@ -134,11 +134,11 @@ enhanced_tensor float_quantize_nearest_cuda(Tensor a, int man_bits, int exp_bits
                                                  o.data_ptr<float>(),
                                                  size,
                                                  man_bits,
-                                                 exp_bits,
-                                                 overflows.data_ptr<int>(),
-                                                 underflows.data_ptr<int>());
+  						 exp_bits);
+  cudaMemcpyFromSymbol(&overflows, "ovf", sizeof(overflows), 0, cudaMemcpyDeviceToHost);
+  cudaMemcpyFromSymbol(&underflows, "udf", sizeof(underflows), 0, cudaMemcpyDeviceToHost);
   enhanced_tensor E;
-  E.T=0;
+  E.T=o;
   E.overflows=overflows;
   E.underflows=underflows;
   return E;

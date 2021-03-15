@@ -7,10 +7,12 @@ __global__ void float_kernel_stochastic(float* __restrict__ a,
                                         int* __restrict__ r,
                                         float* o, int size,
                                         int man_bits,
-                                        int exp_bits,
-                                        int *overflows,
-                                        int *underflows) {
+                                        int exp_bits) {
   int index = blockIdx.x * blockDim.x + threadIdx.x;
+  __shared__ int ovf;
+  __shared__ int udf;
+  ovf = 0;
+  udf = 0;
 
   if (index < size) {
     unsigned int rand_prob = (unsigned int) r[index];
@@ -22,7 +24,7 @@ __global__ void float_kernel_stochastic(float* __restrict__ a,
     int min_exp = -((1 << (exp_bits - 1)) - 2);
     bool subnormal = (target_exp < min_exp);
     if (subnormal){
-      (*underflows)++;
+      udf++;
       float shift_float,val;
       int shift_bits = ((127+min_exp)<<23) | (target >> 31 <<31);
       shift_float = BITS_TO_FLOAT(&shift_bits);
@@ -36,7 +38,7 @@ __global__ void float_kernel_stochastic(float* __restrict__ a,
       quantize_bits = clip_exponent(exp_bits, man_bits, target, quantize_bits_tmp);
       quantized = BITS_TO_FLOAT(&quantize_bits);
       if (quantize_bits!=quantize_bits_tmp){
-        (*overflows)++;
+        ovf++;
       }
     }
     o[index] = quantized;
@@ -48,10 +50,12 @@ __global__ void float_kernel_stochastic(float* __restrict__ a,
 __global__ void float_kernel_nearest(float* __restrict__ a,
                                      float* o, int size,
                                      int man_bits,
-                                     int exp_bits,
-                                     int *overflows,
-                                     int *underflows) {
+                                     int exp_bits) {
   int index = blockIdx.x * blockDim.x + threadIdx.x;
+  __shared__ int ovf;
+  __shared__ int udf;
+  ovf = 0;
+  udf = 0;
 
   if (index < size) {
     unsigned int target,quantize_bits,quantize_bits_tmp;
@@ -62,7 +66,7 @@ __global__ void float_kernel_nearest(float* __restrict__ a,
     int min_exp = -((1 << (exp_bits - 1)) - 2);
     bool subnormal = (target_exp < min_exp);
     if (subnormal){
-      (*underflows)++;
+      udf++;
       float shift_float,val;
       int shift_bits = ((127+min_exp)<<23) | (target >> 31 <<31);
       shift_float = BITS_TO_FLOAT(&shift_bits);
@@ -76,7 +80,7 @@ __global__ void float_kernel_nearest(float* __restrict__ a,
       quantize_bits = clip_exponent(exp_bits, man_bits, target, quantize_bits_tmp);
       quantized = BITS_TO_FLOAT(&quantize_bits);
       if (quantize_bits!=quantize_bits_tmp){
-        (*overflows)++;
+        ovf++;
       }
     }
     o[index] = quantized;
