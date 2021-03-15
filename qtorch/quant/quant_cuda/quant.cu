@@ -96,36 +96,52 @@ Tensor block_quantize_sim_nearest_cuda(Tensor a, int wl) {
   return o;
 }
 
-Tensor float_quantize_stochastic_cuda(Tensor a, int man_bits, int exp_bits) {
+enhanced_tensor float_quantize_stochastic_cuda(Tensor a, int man_bits, int exp_bits) {
   // use external random number right now
   auto o = zeros_like(a);
   auto rand_ints = randint_like(a, INT_MAX, device(kCUDA).dtype(kInt));
   int size = a.numel();
   int blockSize = 1024;
   int blockNums = (size + blockSize - 1) / blockSize;
+  int overflows = 0;
+  int underflows = 0;
 
   float_kernel_stochastic<<<blockNums, blockSize>>>(a.data_ptr<float>(),
                                                     rand_ints.data_ptr<int>(),
                                                     o.data_ptr<float>(),
                                                     size,
                                                     man_bits,
-                                                    exp_bits);
-  return o;
+                                                    exp_bits,
+                                                    overflows.data_ptr<int>(),
+                                                    underflows.data_ptr<int>());
+  enhanced_tensor E;
+  E.T=0;
+  E.overflows=overflows;
+  E.underflows=underflows;
+  return E;
 }
 
-Tensor float_quantize_nearest_cuda(Tensor a, int man_bits, int exp_bits) {
+enhanced_tensor float_quantize_nearest_cuda(Tensor a, int man_bits, int exp_bits) {
   // use external random number right now
   auto o = zeros_like(a);
   int size = a.numel();
   int blockSize = 1024;
   int blockNums = (size + blockSize - 1) / blockSize;
+  int overflows = 0;
+  int underflows = 0;
 
   float_kernel_nearest<<<blockNums, blockSize>>>(a.data_ptr<float>(),
                                                  o.data_ptr<float>(),
                                                  size,
                                                  man_bits,
-                                                 exp_bits);
-  return o;
+                                                 exp_bits,
+                                                 overflows.data_ptr<int>(),
+                                                 underflows.data_ptr<int>());
+  enhanced_tensor E;
+  E.T=0;
+  E.overflows=overflows;
+  E.underflows=underflows;
+  return E;
 }
 
 void fixed_min_max(int wl, int fl, bool symmetric, float* t_min, float* t_max) {
