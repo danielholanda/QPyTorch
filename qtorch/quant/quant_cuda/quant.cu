@@ -123,6 +123,7 @@ enhanced_tensor float_quantize_stochastic_cuda(Tensor a, int man_bits, int exp_b
   cudaFree(d_underflows);
                                                     
   enhanced_tensor E;
+  E.total=size;
   E.T=o;
   E.overflows=h_overflows;
   E.underflows=h_underflows;
@@ -154,6 +155,7 @@ enhanced_tensor float_quantize_nearest_cuda(Tensor a, int man_bits, int exp_bits
   cudaFree(d_underflows);
 
   enhanced_tensor E;
+  E.total=size;
   E.T=o;
   E.overflows=h_overflows;
   E.underflows=h_underflows;

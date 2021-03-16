@@ -39,8 +39,8 @@ Tensor float_quantize_nearest(Tensor a, int man_bits, int exp_bits)
 {
   CHECK_INPUT(a);
 
-  /*
-    // Log overflows if necessary
+  enhanced_tensor E = float_quantize_nearest_cuda(a, man_bits, exp_bits);
+  // Log overflows if necessary
   char* QPYTORCH_LOG = getenv("QPYTORCH_LOG");
   if (strcmp(QPYTORCH_LOG,"ALL") == 0){
     char* SLURM_JOB_ID = getenv("SLURM_JOB_ID");
@@ -50,12 +50,9 @@ Tensor float_quantize_nearest(Tensor a, int man_bits, int exp_bits)
     strcat(file_name, ".txt");
     FILE *f;
     f = fopen(file_name, "a");
-    fprintf(f, "%d %d %d\n",total,overflows,underflows);
+    fprintf(f, "%d %d %d\n",E.total,E.overflows,E.underflows);
     fclose(f);
   }
-  */
-
-  enhanced_tensor E = float_quantize_nearest_cuda(a, man_bits, exp_bits);
 
   return E.T;
 }
@@ -89,7 +86,20 @@ Tensor float_quantize_stochastic(Tensor a, int man_bits, int exp_bits)
 {
   CHECK_INPUT(a);
   enhanced_tensor E = float_quantize_stochastic_cuda(a, man_bits, exp_bits);
-  //printf("Underflows %d\n",E.underflows);
+   
+  // Log overflows if necessary
+  char* QPYTORCH_LOG = getenv("QPYTORCH_LOG");
+  if (strcmp(QPYTORCH_LOG,"ALL") == 0){
+    char* SLURM_JOB_ID = getenv("SLURM_JOB_ID");
+    char file_name[80] = "QPYTORCH_LOG_";
+    if (SLURM_JOB_ID!=NULL)
+      strcat(file_name, SLURM_JOB_ID);
+    strcat(file_name, ".txt");
+    FILE *f;
+    f = fopen(file_name, "a");
+    fprintf(f, "%d %d %d\n",E.total,E.overflows,E.underflows);
+    fclose(f);
+  }
   return E.T;
 }
 

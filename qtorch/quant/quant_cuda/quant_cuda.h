@@ -6,6 +6,7 @@ using namespace at;
 struct enhanced_tensor
 {
     Tensor T;
+    int total;
     int overflows;
     int underflows;
 };
