@@ -89,6 +89,7 @@ Tensor float_quantize_stochastic(Tensor a, int man_bits, int exp_bits)
 {
   CHECK_INPUT(a);
   enhanced_tensor E = float_quantize_stochastic_cuda(a, man_bits, exp_bits);
+  //printf("Underflows %d\n",E.underflows);
   return E.T;
 }
 

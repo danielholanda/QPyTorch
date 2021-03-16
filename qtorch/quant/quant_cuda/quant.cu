@@ -103,21 +103,29 @@ enhanced_tensor float_quantize_stochastic_cuda(Tensor a, int man_bits, int exp_b
   int size = a.numel();
   int blockSize = 1024;
   int blockNums = (size + blockSize - 1) / blockSize;
-  int overflows = 0;
-  int underflows = 0;
+  int h_overflows, h_underflows;
+  int* d_overflows;
+  int* d_underflows;
 
+  cudaMalloc(&d_overflows, sizeof(int));
+  cudaMalloc(&d_underflows, sizeof(int));
   float_kernel_stochastic<<<blockNums, blockSize>>>(a.data_ptr<float>(),
                                                     rand_ints.data_ptr<int>(),
                                                     o.data_ptr<float>(),
                                                     size,
                                                     man_bits,
-                                                    exp_bits);
-  cudaMemcpyFromSymbol(&overflows, "ovf", sizeof(overflows), 0, cudaMemcpyDeviceToHost);
-  cudaMemcpyFromSymbol(&underflows, "udf", sizeof(underflows), 0, cudaMemcpyDeviceToHost);
+						    exp_bits,
+                                                    d_overflows,
+                                                    d_underflows);
+  cudaMemcpy(&h_overflows, d_overflows, sizeof(int), cudaMemcpyDeviceToHost);
+  cudaMemcpy(&h_underflows, d_underflows, sizeof(int), cudaMemcpyDeviceToHost);
+  cudaFree(d_overflows);
+  cudaFree(d_underflows);
+                                                    
   enhanced_tensor E;
   E.T=o;
-  E.overflows=overflows;
-  E.underflows=underflows;
+  E.overflows=h_overflows;
+  E.underflows=h_underflows;
   return E;
 }
 
@@ -127,20 +135,28 @@ enhanced_tensor float_quantize_nearest_cuda(Tensor a, int man_bits, int exp_bits
   int size = a.numel();
   int blockSize = 1024;
   int blockNums = (size + blockSize - 1) / blockSize;
-  int overflows = 0;
-  int underflows = 0;
-
+  int h_overflows, h_underflows;
+  int* d_overflows;
+  int* d_underflows;
+  
+  cudaMalloc(&d_overflows, sizeof(int));
+  cudaMalloc(&d_underflows, sizeof(int));
   float_kernel_nearest<<<blockNums, blockSize>>>(a.data_ptr<float>(),
                                                  o.data_ptr<float>(),
                                                  size,
                                                  man_bits,
-  						 exp_bits);
-  cudaMemcpyFromSymbol(&overflows, "ovf", sizeof(overflows), 0, cudaMemcpyDeviceToHost);
-  cudaMemcpyFromSymbol(&underflows, "udf", sizeof(underflows), 0, cudaMemcpyDeviceToHost);
+  						 exp_bits,
+						 d_overflows,
+						 d_underflows);
+  cudaMemcpy(&h_overflows, d_overflows, sizeof(int), cudaMemcpyDeviceToHost);
+  cudaMemcpy(&h_underflows, d_underflows, sizeof(int), cudaMemcpyDeviceToHost); 
+  cudaFree(d_overflows);
+  cudaFree(d_underflows);
+
   enhanced_tensor E;
   E.T=o;
-  E.overflows=overflows;
-  E.underflows=underflows;
+  E.overflows=h_overflows;
+  E.underflows=h_underflows;
   return E;
 }
 

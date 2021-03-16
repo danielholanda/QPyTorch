@@ -7,12 +7,14 @@ __global__ void float_kernel_stochastic(float* __restrict__ a,
                                         int* __restrict__ r,
                                         float* o, int size,
                                         int man_bits,
-                                        int exp_bits) {
+                                        int exp_bits,
+					int* d_overflows, 
+					int* d_underflows) {
   int index = blockIdx.x * blockDim.x + threadIdx.x;
   __shared__ int ovf;
   __shared__ int udf;
-  ovf = 0;
-  udf = 0;
+  ovf=0;
+  udf=0;
 
   if (index < size) {
     unsigned int rand_prob = (unsigned int) r[index];
@@ -42,6 +44,8 @@ __global__ void float_kernel_stochastic(float* __restrict__ a,
       }
     }
     o[index] = quantized;
+    *d_overflows=ovf;
+    *d_underflows=udf;
   }
 }
 
@@ -50,7 +54,9 @@ __global__ void float_kernel_stochastic(float* __restrict__ a,
 __global__ void float_kernel_nearest(float* __restrict__ a,
                                      float* o, int size,
                                      int man_bits,
-                                     int exp_bits) {
+                                     int exp_bits,
+				     int* d_overflows,
+                                     int* d_underflows) {
   int index = blockIdx.x * blockDim.x + threadIdx.x;
   __shared__ int ovf;
   __shared__ int udf;
@@ -84,6 +90,8 @@ __global__ void float_kernel_nearest(float* __restrict__ a,
       }
     }
     o[index] = quantized;
+    *d_overflows=ovf;
+    *d_underflows=udf;
   }
 
 }
